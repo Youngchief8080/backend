@@ -1,0 +1,12 @@
+{
+  "builds": [
+    {
+      "src": ".",
+      "use": "@railway/static",
+      "migrate": {
+        "strategy": "alembic",
+        "command": "alembic upgrade head"
+      }
+    }
+  ]
+}
