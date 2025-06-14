@@ -1,8 +1,11 @@
 # backend/main.py
 
 from fastapi import FastAPI
+import uvicorn
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+import os
 
 app = FastAPI()
 
@@ -10,6 +13,8 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",  # frontend dev server
     "http://127.0.0.1:3000",
+    "https://www.ptownentertainment.com",
+    "https://www.ptownentertainment.com/"
     "*"  # Optional for testing, use specific in production
 ]
 
@@ -75,5 +80,19 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 #media
 # app.mount("/media", StaticFiles(directory="media"), name="media")
 
+if __name__ == "__main__":
+    environment = settings.ENVIRONMENT
+
+    port = int(os.environ.get("PORT", 8000))
+
+    host="0.0.0.0"
+
+    workers = 4 if environment =="production" else 1
+
+
+    if environment == "production" :
+        uvicorn.run("main:app" , host=host, port=port , workers=workers , reload=False)
+    else :
+        uvicorn.run("main:app" , host=host, port=port , reload=True)
 
 

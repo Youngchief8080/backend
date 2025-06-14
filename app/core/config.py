@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     EMAIL_FROM_NAME: str
     SECRET_KEY: str
     FRONTEND_URL: str
+    ENVIRONMENT: str
 
     class Config:
         env_file = ".env"
