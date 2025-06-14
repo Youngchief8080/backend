@@ -2,8 +2,10 @@ import os
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+import time
+from urllib.parse import urlparse, urlunparse
 
-# Disable .env loading in production - Railway provides its own vars
+# Environment loading - only in development
 if not os.getenv("RAILWAY_ENVIRONMENT"):
     from dotenv import load_dotenv
     load_dotenv(".env")
@@ -14,31 +16,39 @@ if config.config_file_name is not None:
 
 from app.db.base import Base
 target_metadata = Base.metadata
+from app.db.model import user, service, sub_service, booking, banner, pastevent, gallery, news, chats, contact, loyalty_point
 
 def get_url():
-    """Get properly formatted database URL for Railway"""
+    """Get properly formatted and validated database URL"""
     url = os.getenv("DATABASE_URL")
-    
     if not url:
-        raise RuntimeError("DATABASE_URL must be set in environment variables")
+        raise RuntimeError("DATABASE_URL environment variable is required")
+
+    # Parse and validate URL
+    parsed = urlparse(url)
     
-    # Handle Railway's internal URL issue
-    if "postgres.railway.internal" in url:
-        # Replace with external URL format
-        parts = url.split("@")
-        if len(parts) == 2:
-            creds, rest = parts
-            url = f"postgresql://{creds}@containers-us-west-101.railway.app:{rest.split(':')[1]}"
+    # Force postgresql:// scheme
+    if parsed.scheme == "postgres":
+        parsed = parsed._replace(scheme="postgresql")
     
-    # Ensure postgresql:// prefix
-    url = url.replace("postgres://", "postgresql://", 1)
+    # Ensure proper host (replace .internal with .app if present)
+    if "railway.internal" in parsed.netloc:
+        netloc_parts = parsed.netloc.split("@")
+        if len(netloc_parts) == 2:
+            credentials = netloc_parts[0]
+            host_port = netloc_parts[1].replace("postgres.railway.internal", "containers-us-west-101.railway.app")
+            parsed = parsed._replace(netloc=f"{credentials}@{host_port}")
     
-    # Add SSL in production
+    # Add SSL requirements
+    query = parsed.query
     if os.getenv("RAILWAY_ENVIRONMENT"):
-        if "?" in url:
-            url += "&sslmode=require"
+        if query:
+            query += "&sslmode=require"
         else:
-            url += "?sslmode=require"
+            query = "sslmode=require"
+    
+    # Rebuild URL
+    url = urlunparse(parsed._replace(query=query))
     
     return url
 
@@ -53,19 +63,40 @@ def run_migrations_offline():
         context.run_migrations()
 
 def run_migrations_online():
-    connectable = engine_from_config(
-        {"sqlalchemy.url": get_url()},
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            compare_type=True,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
+    # Add retry logic for connection issues
+    max_retries = 3
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            connectable = engine_from_config(
+                {"sqlalchemy.url": get_url()},
+                prefix="sqlalchemy.",
+                poolclass=pool.NullPool,
+                connect_args={
+                    "connect_timeout": 10,
+                    "keepalives": 1,
+                    "keepalives_idle": 30,
+                    "keepalives_interval": 10,
+                    "keepalives_count": 5
+                }
+            )
+            
+            with connectable.connect() as connection:
+                context.configure(
+                    connection=connection,
+                    target_metadata=target_metadata,
+                    compare_type=True,
+                )
+                with context.begin_transaction():
+                    context.run_migrations()
+            break
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise
+            print(f"Connection attempt {attempt + 1} failed, retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+            retry_delay *= 2  # Exponential backoff
 
 if context.is_offline_mode():
     run_migrations_offline()
