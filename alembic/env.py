@@ -23,19 +23,8 @@ target_metadata = Base.metadata
 # Build SQLAlchemy DB URL from env
 def get_url():
     url = os.getenv("DATABASE_URL")
-
-    # If not set directly, build from Railway environment vars
     if not url:
-        user = os.getenv("PGUSER")
-        password = os.getenv("POSTGRES_PASSWORD")
-        host = os.getenv("RAILWAY_PRIVATE_DOMAIN", "postgres.railway.internal")
-        db = os.getenv("PGDATABASE")
-
-        if not all([user, password, host, db]):
-            raise ValueError("❌ Missing required DB env vars for Alembic")
-
-        url = f"postgresql://{user}:{password}@{host}:5432/{db}"
-    
+        raise ValueError("❌ DATABASE_URL is not set in your .env file")
     return url
 
 def run_migrations_offline() -> None:
