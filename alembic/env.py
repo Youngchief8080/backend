@@ -4,7 +4,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from dotenv import load_dotenv
 
-# ✅ Load environment variables
+# ✅ Load environment variables from .env file if it exists
 load_dotenv(".env")
 
 # ✅ Alembic Config object
@@ -21,12 +21,21 @@ from app.db.model import user, service, sub_service, booking, banner, pastevent,
 # ✅ Set metadata for autogenerate
 target_metadata = Base.metadata
 
-# ✅ Get database URL from .env
+# ✅ Get database URL (from full DATABASE_URL or Railway vars)
 def get_url():
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        raise ValueError("❌ DATABASE_URL is not set in your .env file")
-    return url
+    database_url = os.getenv("DATABASE_URL")
+    
+    # Use Railway-specific variables if DATABASE_URL is not set
+    if not database_url:
+        pguser = os.getenv("PGUSER")
+        pgpassword = os.getenv("POSTGRES_PASSWORD")
+        pghost = os.getenv("RAILWAY_PRIVATE_DOMAIN", "postgres.railway.internal")
+        pgdb = os.getenv("PGDATABASE")
+        if not all([pguser, pgpassword, pgdb]):
+            raise ValueError("❌ Missing Railway environment variables (PGUSER, POSTGRES_PASSWORD, PGDATABASE)")
+        database_url = f"postgresql://{pguser}:{pgpassword}@{pghost}:5432/{pgdb}"
+    
+    return database_url
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
@@ -56,13 +65,13 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            compare_type=True,  # Optional: helpful for detecting column type changes
+            compare_type=True,
         )
 
         with context.begin_transaction():
             context.run_migrations()
 
-# ✅ Choose online or offline mode
+# ✅ Choose mode
 if context.is_offline_mode():
     run_migrations_offline()
 else:
