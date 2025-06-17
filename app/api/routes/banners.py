@@ -128,10 +128,8 @@ def get_hero_banner(db: Session = Depends(get_db)):
     banner = db.query(BannerModel).filter(BannerModel.name == "hero").first()
     if not banner:
         raise HTTPException(status_code=404, detail="Hero banner not found")
-
     print("Banner found:", banner.image_url)  # ✅ debug
-
     return {
         "id": banner.id,
-        "image_url": f"/media/{banner.image_url}" if banner.image_url else None
+        "image_url":banner.image_url 
     }
