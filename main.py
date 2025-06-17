@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 import os
+from pathlib import Path
 
 app = FastAPI()
 
@@ -75,6 +76,7 @@ app.include_router(loyalty.router)
 
 
 # Serve uploaded images
+uploads_dir = Path(__file__).resolve().parent / "uploads"
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 #media
 # app.mount("/media", StaticFiles(directory="media"), name="media")
