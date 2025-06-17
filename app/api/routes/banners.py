@@ -122,14 +122,3 @@ def delete_service(service_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"detail": "Service deleted successfully"}
-
-@router.get("/hero")
-def get_hero_banner(db: Session = Depends(get_db)):
-    banner = db.query(BannerModel).filter(BannerModel.name == "hero").first()
-    if not banner:
-        raise HTTPException(status_code=404, detail="Hero banner not found")
-    print("Banner found:", banner.image_url)  # ✅ debug
-    return {
-        "id": banner.id,
-        "image_url":banner.image_url 
-    }
