@@ -15,7 +15,6 @@ origins = [
     "http://127.0.0.1:3000",
     "https://www.ptownentertainment.com",
     "https://www.ptownentertainment.com/"
-    "*"  # Optional for testing, use specific in production
 ]
 
 app.add_middleware(

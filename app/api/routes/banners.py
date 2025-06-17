@@ -52,12 +52,11 @@ def create_service(
     }
 
 # ------------------ Get All Services ------------------
-@router.get("/")
+@router.get("/hero")
 def get_all_services(page: int = 1, limit: int = 5, db: Session = Depends(get_db)):
     skip = (page - 1) * limit
     services = db.query(BannerModel).offset(skip).limit(limit).all()
     total_count = db.query(BannerModel).count()
-
     return {
         "items": [
             {
@@ -123,3 +122,13 @@ def delete_service(service_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"detail": "Service deleted successfully"}
+
+@router.get("/hero")
+def get_hero_banner(db: Session = Depends(get_db)):
+    banner = db.query(BannerModel).first()
+    if not banner:
+        raise HTTPException(status_code=404, detail="No hero banner found")
+    return {
+        "id": banner.id,
+        "image_url": banner.image_url,
+    }
