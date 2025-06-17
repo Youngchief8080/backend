@@ -64,7 +64,7 @@ def create_service(
     
 
     # Add this to your existing FastAPI routes
-@router.get("/getallgallerry/")
+@router.get("/getallgallerry")
 def get_gallery_images(db: Session = Depends(get_db)):
     try:
         # Order by created_at in descending order (newest first)
