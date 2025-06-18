@@ -1,8 +1,8 @@
-
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.db.model.banner import BannerModel
+from app.schemas.banner import BannerOut
 import shutil
 import os
 from uuid import uuid4
@@ -10,7 +10,7 @@ from typing import List
 
 router = APIRouter(prefix="/banners", tags=["Banners"])
 
-# Set up the upload directory relative to project root
+# Upload directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.normpath(os.path.join(BASE_DIR, "../../../uploads/banners"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -25,7 +25,15 @@ def save_image(image: UploadFile) -> str:
 
     return f"/uploads/banners/{filename}".replace("\\", "/")
 
-# ------------------ Create Service ------------------
+# ------------------ Get Hero Banner ------------------
+@router.get("/hero", response_model=BannerOut)
+def get_hero_banner(db: Session = Depends(get_db)):
+    banner = db.query(BannerModel).first()
+    if not banner:
+        raise HTTPException(status_code=404, detail="No banner found")
+    return banner
+
+# ------------------ Create Banner ------------------
 @router.post("/")
 def create_service(
     name: str = Form(...),
@@ -51,7 +59,7 @@ def create_service(
         "image_url": new_service.image_url,
     }
 
-# ------------------ Get All Services ------------------
+# ------------------ Get All Banners ------------------
 @router.get("/")
 def get_all_services(page: int = 1, limit: int = 5, db: Session = Depends(get_db)):
     skip = (page - 1) * limit
@@ -69,7 +77,7 @@ def get_all_services(page: int = 1, limit: int = 5, db: Session = Depends(get_db
         "totalCount": total_count
     }
 
-# ------------------ Get Single Service ------------------
+# ------------------ Get Single Banner ------------------
 @router.get("/{service_id}")
 def get_service_by_id(service_id: int, db: Session = Depends(get_db)):
     service = db.query(BannerModel).filter(BannerModel.id == service_id).first()
@@ -82,7 +90,7 @@ def get_service_by_id(service_id: int, db: Session = Depends(get_db)):
         "image_url": service.image_url,
     }
 
-# ------------------ Update Service ------------------
+# ------------------ Update Banner ------------------
 @router.put("/{service_id}")
 def update_service(
     service_id: int,
@@ -111,7 +119,7 @@ def update_service(
         "image_url": service.image_url,
     }
 
-# ------------------ Delete Service ------------------
+# ------------------ Delete Banner ------------------
 @router.delete("/{service_id}")
 def delete_service(service_id: int, db: Session = Depends(get_db)):
     service = db.query(BannerModel).filter(BannerModel.id == service_id).first()
@@ -122,10 +130,3 @@ def delete_service(service_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"detail": "Service deleted successfully"}
-
-@router.get("/hero")
-def get_hero_banner(db: Session = Depends(get_db)):
-    banner = db.query(BannerModel).first()
-    if not banner:
-        raise HTTPException(status_code=404, detail="Hero banner not found")
-    return {"image_url": banner.image_url}
