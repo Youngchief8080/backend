@@ -70,10 +70,22 @@ app.include_router(chats.router)
 from app.api.routes import contact
 app.include_router(contact.router)
 
+#for points
+
 from app.api.routes import loyalty
 app.include_router(loyalty.router)
 
+#for Teams Members
+from app.api.routes import teams
+app.include_router(teams.router)
 
+#for Testimonial 
+from app.api.routes import Testimonial
+app.include_router(Testimonial.router)
+
+#for getintouch
+from app.api.routes import getintouch
+app.include_router(getintouch.router)
 
 # Serve uploaded images
 uploads_dir = Path(__file__).resolve().parent / "uploads"

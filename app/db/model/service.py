@@ -9,6 +9,7 @@ class ServiceModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(String, index=True)
+    slug = Column(String, unique=True, index=True)  # <-- Add this
     image_url = Column(String, nullable=True)
 
     sub_services = relationship("SubService", back_populates="service", cascade="all, delete-orphan")

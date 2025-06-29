@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 from app.db.base import Base
 from app.db.model import (
     user, service, sub_service, booking, banner,
-    pastevent, gallery, news, chats, contact, loyalty_point
+    pastevent, gallery, news, chats, contact, loyalty_point , teams ,testimonial , getintouch
 )
 
 target_metadata = Base.metadata

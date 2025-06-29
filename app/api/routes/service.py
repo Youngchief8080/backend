@@ -6,6 +6,9 @@ import shutil
 import os
 from uuid import uuid4
 from typing import List
+from slugify import slugify
+from app.schemas.service import ServiceOut
+from fastapi import Path
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
@@ -33,9 +36,10 @@ def create_service(
     db: Session = Depends(get_db),
 ):
     image_url = save_image(image)
-
+    slug = slugify(name)  # <- create slug from service name
     new_service = ServiceModel(
         name=name,
+        slug=slug,
         description=description,
         image_url=image_url
     )
@@ -46,6 +50,7 @@ def create_service(
     return {
         "id": new_service.id,
         "name": new_service.name,
+        "slug": new_service.slug,  # include slug
         "description": new_service.description,
         "image_url": new_service.image_url,
     }
@@ -62,6 +67,7 @@ def get_all_services(page: int = 1, limit: int = 5, db: Session = Depends(get_db
             {
                 "id": s.id,
                 "name": s.name,
+                "slug": s.slug,
                 "description": s.description,
                 "image_url": s.image_url,
             } for s in services
@@ -132,3 +138,42 @@ def get_service_stats(db: Session = Depends(get_db)):
         return {"count": count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+# @router.get("/slug/{slug}", response_model=ServiceOut)
+# def get_service_by_slug(
+#     slug: str = Path(..., description="The slug of the service to retrieve"),
+#     db: Session = Depends(get_db)
+# ):
+#     try:
+#         # Ensure the slug is properly decoded if needed
+#         service = db.query(ServiceModel).filter(ServiceModel.slug == slug).first()
+#         if not service:
+#             raise HTTPException(status_code=404, detail="Service not found")
+
+#         return {
+#             "id": service.id,
+#             "name": service.name,
+#             "slug": service.slug,
+#             "description": service.description or "",
+#             "image_url": service.image_url or "",
+#             "sub_services": [ss.name for ss in service.sub_services] if hasattr(service, 'sub_services') else []
+#         }
+#     except Exception as e:
+#         print(f"Error fetching service: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/slug/{slug}", response_model=ServiceOut)
+def get_service_by_slug(
+    slug: str = Path(..., description="The slug of the service to retrieve"),
+    db: Session = Depends(get_db)
+):
+    try:
+        service = db.query(ServiceModel).filter(ServiceModel.slug == slug).first()
+        if not service:
+            raise HTTPException(status_code=404, detail="Service not found")
+
+        return service  # Let FastAPI use `orm_mode` to handle serialization
+    except Exception as e:
+        print(f"Error fetching service: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")

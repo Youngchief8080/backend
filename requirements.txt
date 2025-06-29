@@ -12,3 +12,4 @@ alembic
 itsdangerous
 python-jose
 python-multipart
+python-slugify

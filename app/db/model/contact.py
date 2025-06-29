@@ -21,5 +21,6 @@ class ContactModel(Base):
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     user_name = Column(String(100), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+    reply = Column(String(2000), nullable=True)
 
     # user = relationship("User", back_populates="contacts")

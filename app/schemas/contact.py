@@ -1,7 +1,7 @@
 # app/schemas/contact.py
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional , Literal
 
 class ContactForm(BaseModel):
     subject: str
@@ -14,6 +14,7 @@ class ContactResponse(BaseModel):
     id: int
     subject: str
     message: str
+    reply: Optional[str] = None  # ← Add this line
     status: str = 'pending'  # Consistent with DB model
     user_id: int # Make consistent with Form
     user_name: Optional[str] = None  # Make consistent with Form
@@ -21,3 +22,7 @@ class ContactResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class ContactReply(BaseModel):
+    reply: str
+    status: Literal["resolved", "rejected"]
