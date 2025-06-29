@@ -88,10 +88,12 @@ from app.api.routes import getintouch
 app.include_router(getintouch.router)
 
 # Serve uploaded images
-uploads_dir = Path(__file__).resolve().parent / "uploads"
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# uploads_dir = Path(__file__).resolve().parent / "uploads"
+# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 #media
 # app.mount("/media", StaticFiles(directory="media"), name="media")
+uploads_dir = Path(__file__).resolve().parent / "uploads"
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 if __name__ == "__main__":
     environment = settings.ENVIRONMENT
