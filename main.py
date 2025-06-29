@@ -87,15 +87,9 @@ app.include_router(Testimonial.router)
 from app.api.routes import getintouch
 app.include_router(getintouch.router)
 
-# # Serve uploaded images
-# uploads_dir = Path(__file__).resolve().parent / "uploads"
-# # app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
+# Serve uploaded images
 uploads_dir = Path(__file__).resolve().parent / "uploads"
-app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
-
-
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 #media
 # app.mount("/media", StaticFiles(directory="media"), name="media")
 
