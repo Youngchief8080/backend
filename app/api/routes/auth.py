@@ -4,12 +4,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.schemas.user import UserCreate, UserOut, AdminCreateUser, UserUpdate , TechnicianMinimalOut , UserProfileOut
+from app.schemas.user import UserCreate, UserOut, AdminCreateUser, UserUpdate , TechnicianMinimalOut , UserProfileOut , PasswordResetRequest , PasswordResetConfirm
 from app.crud.user import get_user_by_email, get_user_by_id
 from app.db.session import get_db
 from app.core.security import get_password_hash, verify_password
 from app.db.model.user import User
-from app.services.email import send_verification_email
+from app.services.email import send_verification_email , send_reset_password_email  
 from app.utils.token import generate_verification_token, verify_token
 from app.services.jwt import create_access_token
 from app.api.deps import get_current_admin_user  # Admin-only route dependenc
@@ -250,6 +250,38 @@ def get_user_profile_image(user_id: str, db: Session = Depends(get_db)):
         "is_active": user.is_active,
         "profile_image": user.profile_image,
     }
+
+
+@router.post("/forgot-password")
+def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
+    user = get_user_by_email(db, request.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User with this email does not exist")
+
+    token = generate_verification_token(user.email)
+    user.reset_token = token  # Add this column to your `User` model if not exists
+    db.commit()
+
+    send_reset_password_email(user.email, token)  # Implement similar to verification email
+
+    return {"message": "Password reset link sent to your email"}
+
+
+@router.post("/reset-password")
+def reset_password(data: PasswordResetConfirm, db: Session = Depends(get_db)):
+    email = verify_token(data.token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.hashed_password = get_password_hash(data.new_password)
+    user.reset_token = None  # Invalidate token
+    db.commit()
+
+    return {"message": "Password has been reset successfully"}
 
 
 

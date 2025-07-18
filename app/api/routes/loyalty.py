@@ -41,24 +41,19 @@ def adjust_user_loyalty_points(payload: LoyaltyAdjustmentRequest, db: Session = 
     user = db.query(User).filter(User.id == payload.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
     new_balance = (user.loyalty_points or 0) + payload.points
     if new_balance < 0:
         raise HTTPException(status_code=400, detail="Cannot reduce points below 0")
-
     user.loyalty_points = new_balance
-
     txn = LoyaltyPointTransaction(
         user_id=user.id,
         points=payload.points,
         reason=payload.reason,
         related_id=None  # since this is manual
     )
-
     db.add(txn)
     db.commit()
     db.refresh(user)
-
     return {
         "message": "Points adjusted successfully",
         "user_id": user.id,

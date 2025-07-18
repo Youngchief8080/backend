@@ -27,6 +27,7 @@ class User(Base):
     country = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    reset_token = Column(String, nullable=True)
 
     # Relationships
     customer_bookings = relationship(
