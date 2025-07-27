@@ -27,37 +27,43 @@ def save_image(image: UploadFile) -> str:
 
 # ------------------ Create Service ------------------
 @router.post("/")
-def create_service(
+def create_gallery_items(
     title: str = Form(...),
     description: str = Form(None),
     category: str = Form(...),
-    image: UploadFile = File(...),
+    images: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
     try:
-        if not image.content_type.startswith('image/'):
-            raise HTTPException(status_code=400, detail="File must be an image")
+        new_items = []
 
-        image_url = save_image(image)
+        for image in images:
+            if not image.content_type.startswith("image/"):
+                raise HTTPException(status_code=400, detail=f"{image.filename} is not a valid image")
 
-        new_service = GalleryModel(
-            title=title,
-            description=description or "",
-            category=category,
-            image_url=image_url
-        )
-        db.add(new_service)
+            image_url = save_image(image)
+
+            gallery_item = GalleryModel(
+                title=title,
+                description=description or "",
+                category=category,
+                image_url=image_url
+            )
+            db.add(gallery_item)
+            db.flush()  # prepares object with id before commit
+
+            new_items.append({
+                "id": gallery_item.id,
+                "title": gallery_item.title,
+                "description": gallery_item.description,
+                "category": gallery_item.category,
+                "image_url": gallery_item.image_url,
+                "created_at": gallery_item.created_at,
+            })
+
         db.commit()
-        db.refresh(new_service)
+        return new_items
 
-        return {
-            "id": new_service.id,
-            "title": new_service.title,
-            "description": new_service.description,
-            "category": new_service.category,
-            "image_url": new_service.image_url,
-            "created_at": new_service.created_at,  # Changed from 'created' to 'created_at'
-        }
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
